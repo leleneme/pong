@@ -6,7 +6,7 @@ use std::path;
 mod ball;
 mod constants;
 mod paddle;
-
+mod audio_manager;
 mod game;
 use game::MainState;
 

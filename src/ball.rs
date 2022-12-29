@@ -1,9 +1,9 @@
-use ggez::audio::*;
 use ggez::glam::Vec2;
 use ggez::graphics::Mesh;
 use ggez::Context;
 use rand::{self, thread_rng, Rng};
 
+use crate::audio_manager::AudioManager;
 use crate::constants::*;
 use crate::paddle::*;
 
@@ -11,16 +11,14 @@ pub struct Ball {
     pub mesh: Mesh,
     pub position: Vec2,
     pub velocity: Vec2,
-    hit_sound: Source,
 }
 
 impl Ball {
-    pub fn new(ctx: &Context, mesh: Mesh, position: Vec2) -> Ball {
+    pub fn new(mesh: Mesh, position: Vec2) -> Ball {
         Ball {
             mesh,
             position,
             velocity: Ball::random_velocity(),
-            hit_sound: Source::new(ctx, "/hit.ogg").unwrap(),
         }
     }
 
@@ -47,7 +45,7 @@ impl Ball {
         self.velocity = Ball::random_velocity();
     }
 
-    pub fn update_ball(&mut self, ctx: &Context, paddle_1: &Paddle, paddle_2: &Paddle) {
+    pub fn update_ball(&mut self, ctx: &Context, paddle_1: &Paddle, paddle_2: &Paddle, audio_manager: &mut AudioManager) {
         let delta = ctx.time.delta().as_secs_f32();
 
         self.position += self.velocity * delta;
@@ -80,7 +78,7 @@ impl Ball {
         }
 
         if did_collide {
-            self.hit_sound.play_detached(ctx).unwrap()
+            audio_manager.play_hit(ctx);
         }
     }
 

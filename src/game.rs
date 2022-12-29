@@ -1,10 +1,10 @@
-use ggez::audio::*;
 use ggez::event;
 use ggez::glam::*;
 use ggez::graphics::{Canvas, Color, DrawMode, Mesh, Rect, Text};
 use ggez::input::keyboard::KeyCode;
 use ggez::{Context, GameResult};
 
+use crate::audio_manager::AudioManager;
 use crate::ball::Ball;
 use crate::constants::*;
 use crate::paddle::{Direction, Paddle};
@@ -16,7 +16,7 @@ pub struct MainState {
     score: (u32, u32),
     middle_bar: Mesh,
     middle_position: Vec2,
-    goal_sound: Source,
+    audio_manager: AudioManager
 }
 
 fn build_rect_mesh(ctx: &Context, width: f32, height: f32, color: Color) -> Mesh {
@@ -32,23 +32,23 @@ impl MainState {
         let (screen_w, screen_h) = ctx.gfx.drawable_size();
         let paddle_middle_y = (screen_h * 0.5) - (PADDLE_H * 0.5);
         let ball_middle_vec = Vec2::new((screen_w - PADDLE_W) * 0.5, (screen_h - PADDLE_W) * 0.5);
+        let middle_bar = build_rect_mesh(ctx, 2.0, screen_h, Color::WHITE);
 
-        let middle_line_mesh = build_rect_mesh(ctx, 2.0, screen_h, Color::WHITE);
+        let player_1 = Paddle::new(paddle_mesh.clone(), SCREEN_PADDING, paddle_middle_y);
+        let player_2 = Paddle::new(paddle_mesh, screen_w - SCREEN_PADDING * 2.0, paddle_middle_y);
+
+        let middle_position = Vec2::new(screen_w * 0.5, 0.0);
+        let audio_manager = AudioManager::new(ctx);
+        let ball = Ball::new(ball_mesh, ball_middle_vec);
 
         let state = MainState {
-            player_1: Paddle {
-                mesh: paddle_mesh.clone(),
-                position: Vec2::new(0.0 + SCREEN_PADDING, paddle_middle_y),
-            },
-            player_2: Paddle {
-                mesh: paddle_mesh,
-                position: Vec2::new(screen_w - SCREEN_PADDING * 2.0, paddle_middle_y),
-            },
-            ball: Ball::new(ctx, ball_mesh, ball_middle_vec),
-            middle_bar: middle_line_mesh,
-            middle_position: Vec2::new(screen_w * 0.5, 0.0),
+            player_1,
+            player_2,
+            middle_bar,
+            middle_position,
             score: (0, 0),
-            goal_sound: Source::new(ctx, "/goal.ogg").unwrap(),
+            audio_manager,
+            ball,
         };
 
         Ok(state)
@@ -71,7 +71,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
             self.player_2.move_paddle(ctx, Direction::Down);
         }
 
-        self.ball.update_ball(ctx, &self.player_1, &self.player_2);
+        self.ball.update_ball(ctx, &self.player_1, &self.player_2, &mut self.audio_manager);
 
         if k_ctx.is_key_pressed(KeyCode::R) {
             self.ball.reset(ctx);
@@ -94,7 +94,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
         }
 
         if did_goal {
-            self.goal_sound.play_detached(ctx).unwrap();
+            self.audio_manager.play_goal(ctx);
         }
 
         Ok(())

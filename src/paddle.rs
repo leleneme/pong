@@ -15,6 +15,13 @@ pub enum Direction {
 }
 
 impl Paddle {
+    pub fn new(mesh: Mesh, x: f32, y: f32) -> Paddle {
+        Paddle {
+            mesh,
+            position: Vec2::new(x, y),
+        }
+    }
+
     pub fn move_paddle(&mut self, ctx: &Context, direction: Direction) {
         let move_vec: Vec2 = match direction {
             Direction::Up => Vec2::new(0.0, -PADDLE_SPEED),
